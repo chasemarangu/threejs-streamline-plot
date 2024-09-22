@@ -1,0 +1,47 @@
+<!Doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		
+		<title>Three.js Streamline Plot</title>
+		<!-- <link rel="icon" type="image/png" href=././favicon.png> -->
+		<!-- <link rel="icon" type="image/vnd.microsoft.icon" href=././logo.ico> -->
+		<!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+		
+		<link rel="stylesheet" href=././style.css>
+	</head>
+	<body>
+
+<!--
+ThreeJS Streamline Plot
+-->
+
+<div id=canvas-wrapper>
+</div>
+<div>
+	<!--had to switch from <button onclick=play()>Play</button> due to onclick attribute violating ThreeJS Content Security Policy (CSP)-->
+	<!-- Add hyphen in id name play-button to prevent the browser from storing it as a variable (e.g. button id=play would mean window.play variable auto-created) -->
+	<button id=play-button>Play</button>
+	<button id=pause-button>Pause</button>
+	<button id=restart-button>Restart</button>
+	<span id=framecount-stat>frame count</span>
+	<span id=millis-stat>milliseconds</span>
+</div>
+
+<!--
+https://cdnjs.com/libraries/three.js/0.168.0
+-->
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.168.0/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"
+    },
+	"integrity": {
+		"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.168.0/three.module.js":"sha512-cV5o5uoKbUWe+4GaJ4Eu/oaZ4IJKh2OhShH7Gwub0OQ6oPgxQxXL++Ih6AJJk70O/JCBhf9nxAm+Hhsx1ddk1g=="
+	}
+  }
+</script>
+<script type=module src=././script.js></script>
+	</body>
+</html>
