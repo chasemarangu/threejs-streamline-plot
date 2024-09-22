@@ -1,6 +1,3 @@
-// based on https://codepen.io/jason-buchheim/pen/PoNYKjV
-// MUSTDO - add script integrity
-// import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.min.js';
 import * as THREE from 'three';
 
 import { VRButton } from 'three/addons/webxr/VRButton.js';
@@ -26,33 +23,19 @@ function myPrint(txt) {
 
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const camera = new THREE.PerspectiveCamera(); // updated in ResizeObserver()
 
 const renderer = new THREE.WebGLRenderer();
 const theWrap = document.querySelector("#canvas-wrapper")
-// renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setSize( window.innerWidth / 2, window.innerHeight / 2);
-// third argument false means lower resolution but same width/height
-// renderer.setSize( window.innerWidth / 2, window.innerHeight / 2, false);
-// document.body.appendChild( renderer.domElement );
-// Element.append() vs Node.appendChild()
+// renderer.setSize( window.innerWidth/2, window.innerHeight/2);
+// Element.append() vs Node.appendChild().
+// renderer.domElement is the canvas.
 theWrap.append(renderer.domElement)
-// myPrint( renderer.domElement )
-// CHASE3 - add VR button
+
+
 document.body.appendChild( VRButton.createButton( renderer ) );
 renderer.xr.enabled = true;
-new ResizeObserver(function(){
-	// based on ThreeJS examples
-	camera.aspect = theWrap.clientWidth / theWrap.clientHeight;
-	camera.updateProjectionMatrix();
-	renderer.setSize(theWrap.clientWidth, theWrap.clientHeight)
-	// took me a while, but I figured out we
-	// need to drawScene() after doing this other
-	// stuff in the ResizeObserver to prevent
-	// the canvas from blinking white.
-	drawScene()
-	
-}).observe(document.querySelector('#canvas-wrapper'))
+
 
 let geometry = new THREE.BoxGeometry( 1, 1, 1 );
 let material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
@@ -80,18 +63,29 @@ scene.add(line2)
 let frameCount = 0;
 let playing = false;
 let canImmersiveXR = false;
-if ('xr' in navigator) {
-	
+if ('xr' in navigator) {}
+let par1 = 0.2;
+
+
+function resetScene () {
+	par1 = 0;
+	cube.rotation.x = 0;
+	cube.rotation.y = 0;
+	// console.log(par1)
 }
-
-
 function drawScene () {
 	renderer.render( scene, camera );
-	cube.rotation.x = frameCount / 30 * Math.PI/2;
-	cube.rotation.y = frameCount / 30 * Math.PI/2;
 	++frameCount;
 }
 
+
+function animScene () {
+	cube.rotation.x = par1 / 30 * Math.PI/2;
+	cube.rotation.y = par1 / 30 * Math.PI/2;
+	++par1;
+}
+
+resetScene();
 drawScene();
 
 function updateUI () {
@@ -99,8 +93,14 @@ function updateUI () {
 }
 let updateUIid = setInterval( updateUI, 100 )
 
+
+function animLoopFunc() {
+	drawScene();
+	animScene();
+}
+
 function play () {
-	renderer.setAnimationLoop( drawScene );
+	renderer.setAnimationLoop(animLoopFunc);
 }
 document.querySelector('#play-button').addEventListener('click', play)
 
@@ -112,7 +112,19 @@ document.querySelector('#pause-button').addEventListener('click', pause)
 function restart () {
 	pause()
 	frameCount = 0;
+	resetScene()
 	drawScene()
 }
 document.querySelector('#restart-button').addEventListener('click', restart)
 
+new ResizeObserver(function(){
+	// based on ThreeJS examples
+	camera.aspect = theWrap.clientWidth / theWrap.clientHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize(theWrap.clientWidth, theWrap.clientHeight)
+	// took me a while, but I figured out we
+	// need to drawScene() after doing this other
+	// stuff in the ResizeObserver to prevent
+	// the canvas from blinking white.
+	drawScene()
+}).observe(document.querySelector('#canvas-wrapper'))
