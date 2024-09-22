@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 import { VRButton } from 'three/addons/webxr/VRButton.js';
-
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 function myPrint(txt) {
 	txt = "" + txt;
@@ -36,7 +36,16 @@ theWrap.append(renderer.domElement)
 document.body.appendChild( VRButton.createButton( renderer ) );
 renderer.xr.enabled = true;
 
+// https://github.com/mrdoob/three.js/blob/master/examples/webgpu_compute_particles.html
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.minDistance = 5;
+controls.maxDistance = 200;
+controls.target.set( 0, 0, 0 );
+controls.update();
+controls.saveState();
 
+
+// Geometry and materials
 let geometry = new THREE.BoxGeometry( 1, 1, 1 );
 let material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 let cube = new THREE.Mesh( geometry, material );
@@ -57,11 +66,50 @@ scene.add(line2)
 
 
 
+// create a bunch of points, copied from ThreeJS docs
+// https://threejs.org/docs/#api/en/materials/PointsMaterial
+// array of particles
+let arr = [];
+
+for ( let i = 0; i < 1000; i ++ ) {
+	const { random } = Math;
+	const x = random() * 100 - 50;
+	const y = random() * 100 - 50;
+	const z = random() * 100 - 50;
+	
+	arr.push( x, y, z );
+}
+
+const geometry3 = new THREE.BufferGeometry();
+geometry3.setAttribute( 'position', new THREE.Float32BufferAttribute( arr, 3 ) );
+const material3 = new THREE.PointsMaterial( { color: 0x888888 } );
+const points3 = new THREE.Points( geometry3, material3 );
+scene.add( points3 );
+
+
+// particles attempt, based on
+// https://github.com/mrdoob/three.js/blob/master/examples/webgpu_particles.html and
+// https://github.com/mrdoob/three.js/blob/master/examples/webgpu_compute_particles.html
+// which have a different importmap : "imports": { "three": "../build/three.webgpu.js" }
+// const smokeNodeMaterial = new THREE.SpriteMaterial();
+// smokeNodeMaterial.colorNode = mix( color( 0xf27d0c ), smokeColor, life.mul( 2.5 ).min( 1 ) ).mul( fakeLightEffect );
+// smokeNodeMaterial.opacityNode = opacityNode;
+// smokeNodeMaterial.positionNode = offsetRange.mul( lifeTime );
+// smokeNodeMaterial.scaleNode = scaleRange.mul( lifeTime.max( 0.3 ) );
+// smokeNodeMaterial.depthWrite = false;
+// smokeNodeMaterial.transparent = true;
+
+// const smokeInstancedSprite = new THREE.Mesh( new THREE.PlaneGeometry( 1, 1 ), smokeNodeMaterial );
+// smokeInstancedSprite.scale.setScalar( 400 );
+// smokeInstancedSprite.count = 2000;
+// scene.add( smokeInstancedSprite );
+
+
+
 
 
 
 let frameCount = 0;
-let playing = false;
 let canImmersiveXR = false;
 if ('xr' in navigator) {}
 let par1 = 0.2;
@@ -72,6 +120,7 @@ function resetScene () {
 	cube.rotation.x = 0;
 	cube.rotation.y = 0;
 	// console.log(par1)
+	controls.reset();
 }
 function drawScene () {
 	renderer.render( scene, camera );
@@ -87,6 +136,7 @@ function animScene () {
 
 resetScene();
 drawScene();
+play()
 
 function updateUI () {
 	document.querySelector('#framecount-stat').textContent = 'frames: ' + frameCount;
@@ -118,7 +168,6 @@ function restart () {
 document.querySelector('#restart-button').addEventListener('click', restart)
 
 new ResizeObserver(function(){
-	// based on ThreeJS examples
 	camera.aspect = theWrap.clientWidth / theWrap.clientHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize(theWrap.clientWidth, theWrap.clientHeight)
