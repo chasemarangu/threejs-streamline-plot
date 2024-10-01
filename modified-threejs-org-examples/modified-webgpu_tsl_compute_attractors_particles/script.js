@@ -14,317 +14,269 @@ init();
 
 function init() {
 
-	camera = new THREE.PerspectiveCamera( 25, window.innerWidth / window.innerHeight, 0.1, 100 );
-	camera.position.set( 3, 5, 8 );
+camera = new THREE.PerspectiveCamera( 25, window.innerWidth / window.innerHeight, 0.1, 100 );
+camera.position.set( 0, 5, -10 );
 
-	scene = new THREE.Scene();
+scene = new THREE.Scene();
 
-	// ambient light
+// const ambientLight = new THREE.AmbientLight( '#ffffff', 0.5 );
+// scene.add( ambientLight );
 
-	const ambientLight = new THREE.AmbientLight( '#ffffff', 0.5 );
-	scene.add( ambientLight );
 
-	// directional light
+// renderer
+renderer = new THREE.WebGPURenderer( { antialias: true } );
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.setAnimationLoop( animate );
+// Note: can set a translucent clear color
+renderer.setClearColor( '#000' );
+// renderer.setClearColor( '#0000FF',0.2 );
+// renderer.setClearColor( '#000',0 );
+document.body.appendChild( renderer.domElement );
 
-	const directionalLight = new THREE.DirectionalLight( '#ffffff', 1.5 );
-	directionalLight.position.set( 4, 2, 0 );
-	scene.add( directionalLight );
+controls = new OrbitControls( camera, renderer.domElement );
+controls.enableDamping = true;
+controls.minDistance = 0.1;
+controls.maxDistance = 50;
 
-	// renderer
+window.addEventListener( 'resize', onWindowResize );
 
-	renderer = new THREE.WebGPURenderer( { antialias: true } );
-	renderer.setPixelRatio( window.devicePixelRatio );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.setAnimationLoop( animate );
-	renderer.setClearColor( '#000000' );
-	document.body.appendChild( renderer.domElement );
+// attractors
 
-	controls = new OrbitControls( camera, renderer.domElement );
-	controls.enableDamping = true;
-	controls.minDistance = 0.1;
-	controls.maxDistance = 50;
+const attractorsPositions = uniformArray( [
+	new THREE.Vector3( - 1, 0, 0 ),
+	new THREE.Vector3( 1, 0, 0 ),
+	// new THREE.Vector3( 0, 0.5, 1 )
+] );
+const attractorsRotationAxes = uniformArray( [
+	new THREE.Vector3( 0, 1, 0 ),
+	new THREE.Vector3( 0, 1, 0 ),
+	new THREE.Vector3( 1, 0, - 0.5 ).normalize()
+] );
+const attractorsLength = uniform( attractorsPositions.array.length );
+const attractors = [];
 
-	window.addEventListener( 'resize', onWindowResize );
+for ( let i = 0; i < attractorsPositions.array.length; i ++ ) {
+	const attractor = {};
+	attractor.position = attractorsPositions.array[ i ];
+	attractor.orientation = attractorsRotationAxes.array[ i ];
+	attractor.reference = new THREE.Object3D();
+	attractor.reference.position.copy( attractor.position );
+	// attractor.reference.quaternion.setFromUnitVectors( new THREE.Vector3( 0, 1, 0 ), attractor.orientation );
+	// Note: This below line with adding to scene is to click-drag the controls
+	scene.add( attractor.reference );
+	//
+	//
+	// const helpersRingGeometry = new THREE.RingGeometry( 1, 1.02, 32, 1, 0, Math.PI * 1.5 );
+	// const helpersMaterial = new THREE.MeshBasicMaterial( { side: THREE.DoubleSide } );
+	// attractor.helper = new THREE.Group();
+	// 	attractor.helper.scale.setScalar( 0.325 );
+	// attractor.reference.add( attractor.helper );
 
-	// attractors
+	// 	attractor.ring = new THREE.Mesh( helpersRingGeometry, helpersMaterial );
+	// 	attractor.ring.rotation.x = - Math.PI * 0.5;
+	// attractor.helper.add( attractor.ring );
 
-	const attractorsPositions = uniformArray( [
-		new THREE.Vector3( - 1, 0, 0 ),
-		new THREE.Vector3( 1, 0, - 0.5 ),
-		new THREE.Vector3( 0, 0.5, 1 )
-	] );
-	const attractorsRotationAxes = uniformArray( [
-		new THREE.Vector3( 0, 1, 0 ),
-		new THREE.Vector3( 0, 1, 0 ),
-		new THREE.Vector3( 1, 0, - 0.5 ).normalize()
-	] );
-	const attractorsLength = uniform( attractorsPositions.array.length );
-	const attractors = [];
-	const helpersRingGeometry = new THREE.RingGeometry( 1, 1.02, 32, 1, 0, Math.PI * 1.5 );
-	const helpersArrowGeometry = new THREE.ConeGeometry( 0.1, 0.4, 12, 1, false );
-	const helpersMaterial = new THREE.MeshBasicMaterial( { side: THREE.DoubleSide } );
 
-	for ( let i = 0; i < attractorsPositions.array.length; i ++ ) {
+	attractor.controls = new TransformControls( camera, renderer.domElement );
+	attractor.controls.mode = 'translate';
+	attractor.controls.size = 0.5;
+	attractor.controls.attach( attractor.reference );
+	attractor.controls.visible = true;
+	attractor.controls.enabled = attractor.controls.visible;
+	scene.add( attractor.controls );
 
-		const attractor = {};
-
-		attractor.position = attractorsPositions.array[ i ];
-		attractor.orientation = attractorsRotationAxes.array[ i ];
-		attractor.reference = new THREE.Object3D();
-		attractor.reference.position.copy( attractor.position );
-		attractor.reference.quaternion.setFromUnitVectors( new THREE.Vector3( 0, 1, 0 ), attractor.orientation );
-		scene.add( attractor.reference );
-
-		attractor.helper = new THREE.Group();
-		attractor.helper.scale.setScalar( 0.325 );
-		attractor.reference.add( attractor.helper );
-
-		attractor.ring = new THREE.Mesh( helpersRingGeometry, helpersMaterial );
-		attractor.ring.rotation.x = - Math.PI * 0.5;
-		attractor.helper.add( attractor.ring );
-
-		attractor.arrow = new THREE.Mesh( helpersArrowGeometry, helpersMaterial );
-		attractor.arrow.position.x = 1;
-		attractor.arrow.position.z = 0.2;
-		attractor.arrow.rotation.x = Math.PI * 0.5;
-		attractor.helper.add( attractor.arrow );
-
-		attractor.controls = new TransformControls( camera, renderer.domElement );
-		attractor.controls.mode = 'rotate';
-		attractor.controls.size = 0.5;
-		attractor.controls.attach( attractor.reference );
-		attractor.controls.visible = true;
-		attractor.controls.enabled = attractor.controls.visible;
-		scene.add( attractor.controls );
-
-		attractor.controls.addEventListener( 'dragging-changed', ( event ) => {
-
-			controls.enabled = ! event.value;
-
-		} );
-
-		attractor.controls.addEventListener( 'change', () => {
-
-			attractor.position.copy( attractor.reference.position );
-			attractor.orientation.copy( new THREE.Vector3( 0, 1, 0 ).applyQuaternion( attractor.reference.quaternion ) );
-
-		} );
-
-		attractors.push( attractor );
-
-	}
-
-	// particles
-
-	const count = Math.pow( 2, 18 );
-	const material = new THREE.SpriteNodeMaterial( { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false } );
-
-	const attractorMass = uniform( Number( `1e${7}` ) );
-	const particleGlobalMass = uniform( Number( `1e${4}` ) );
-	const timeScale = uniform( 1 );
-	const spinningStrength = uniform( 2.75 );
-	const maxSpeed = uniform( 8 );
-	const gravityConstant = 6.67e-11;
-	const velocityDamping = uniform( 0.1 );
-	const scale = uniform( 0.008 );
-	const boundHalfExtent = uniform( 8 );
-	const colorA = uniform( color( '#5900ff' ) );
-	const colorB = uniform( color( '#ffa575' ) );
-
-	const positionBuffer = storage( new THREE.StorageInstancedBufferAttribute( count, 3 ), 'vec3', count );
-	const velocityBuffer = storage( new THREE.StorageInstancedBufferAttribute( count, 3 ), 'vec3', count );
-
-	const sphericalToVec3 = Fn( ( [ phi, theta ] ) => {
-
-		const sinPhiRadius = sin( phi );
-
-		return vec3(
-			sinPhiRadius.mul( sin( theta ) ),
-			cos( phi ),
-			sinPhiRadius.mul( cos( theta ) )
-		);
-
+	attractor.controls.addEventListener( 'dragging-changed', ( event ) => {
+		controls.enabled = ! event.value;
 	} );
 
-	// init compute
-
-	const init = Fn( () => {
-
-		const position = positionBuffer.element( instanceIndex );
-		const velocity = velocityBuffer.element( instanceIndex );
-
-		const basePosition = vec3(
-			hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) ),
-			hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) ),
-			hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) )
-		).sub( 0.5 ).mul( vec3( 5, 0.2, 5 ) );
-		position.assign( basePosition );
-
-		const phi = hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) ).mul( PI ).mul( 2 );
-		const theta = hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) ).mul( PI );
-		const baseVelocity = sphericalToVec3( phi, theta ).mul( 0.05 );
-		velocity.assign( baseVelocity );
-
+	attractor.controls.addEventListener( 'change', () => {
+		attractor.position.copy( attractor.reference.position );
+		attractor.orientation.copy( new THREE.Vector3( 0, 1, 0 ).applyQuaternion( attractor.reference.quaternion ) );
 	} );
+	attractors.push( attractor );
+// end of for loop
+}
 
-	const initCompute = init().compute( count );
 
-	const reset = () => {
 
-		renderer.compute( initCompute );
 
-	};
+// particles
 
-	reset();
+const count = Math.pow( 2, 18 );
+const material = new THREE.SpriteNodeMaterial( { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false } );
 
-	// update compute
+const attractorMass = uniform( Number( `1e${7}` ) );
+const particleGlobalMass = uniform( Number( `1e${4}` ) );
+const timeScale = uniform( 1 );
+const spinningStrength = uniform( 2.75 );
+const maxSpeed = uniform( 8 );
+const gravityConstant = 6.67e-11;
+const scale = uniform( 0.008 );
+const boundHalfExtent = uniform( 8 );
+const colorA = uniform( color( '#5900ff' ) );
+const colorB = uniform( color( '#ffa575' ) );
 
-	const particleMassMultiplier = hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) ).remap( 0.25, 1 ).toVar();
-	const particleMass = particleMassMultiplier.mul( particleGlobalMass ).toVar();
+const positionBuffer = storage( new THREE.StorageInstancedBufferAttribute( count, 3 ), 'vec3', count );
+const velocityBuffer = storage( new THREE.StorageInstancedBufferAttribute( count, 3 ), 'vec3', count );
 
-	const update = Fn( () => {
+const sphericalToVec3 = Fn( ( [ phi, theta ] ) => {
+	const sinPhiRadius = sin( phi );
+	return vec3(
+		sinPhiRadius.mul( sin( theta ) ),
+		cos( phi ),
+		sinPhiRadius.mul( cos( theta ) )
+	);
 
-		// const delta = timerDelta().mul( timeScale ).min( 1 / 30 ).toVar();
-		const delta = float( 1 / 60 ).mul( timeScale ).toVar(); // uses fixed delta to consistant result
-		const position = positionBuffer.element( instanceIndex );
-		const velocity = velocityBuffer.element( instanceIndex );
+} );
 
-		// force
+const vecField = Fn( ( [ x, y, z ] ) => {
+// 	const sinPhiRadius = sin( x );
+	
+// 	return vec3(
+// 		sinPhiRadius.mul( sin( y ) ),
+// 		cos( x ),
+// 		sinPhiRadius.mul( cos( y ) )
+// 	);
+	// return vec3(
+	// 	x.sub(y),
+	// 	y.sub(x),
+	// 	z
+	// )
+	return vec3(
+		cos(x.mul(2)).add(2),
+		sin(y.mul(3)).add(2),
+		0
+	)
+} );
 
-		const force = vec3( 0 ).toVar();
+// init compute
 
-		Loop( attractorsLength, ( { i } ) => {
+const init = Fn( () => {
+	const position = positionBuffer.element( instanceIndex );
+	const velocity = velocityBuffer.element( instanceIndex );
+	
+	const basePosition = vec3(
+		hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) ),
+		hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) ),
+		hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) )
+	).sub( 0.5 ).mul( vec3( 8, 8, 8 ) );
+	position.assign( basePosition );
+	const phi = hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) ).mul( PI ).mul( 2 );
+	const theta = hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) ).mul( PI );
+	const baseVelocity = sphericalToVec3( phi, theta ).mul( 0.05 );
+	velocity.assign( baseVelocity );
+} );
 
-			const attractorPosition = attractorsPositions.element( i );
-			const attractorRotationAxis = attractorsRotationAxes.element( i );
-			const toAttractor = attractorPosition.sub( position );
-			const distance = toAttractor.length();
-			const direction = toAttractor.normalize();
+const initCompute = init().compute( count );
 
-			// gravity
-			const gravityStrength = attractorMass.mul( particleMass ).mul( gravityConstant ).div( distance.pow( 2 ) ).toVar();
-			const gravityForce = direction.mul( gravityStrength );
-			force.addAssign( gravityForce );
+const reset = () => {
+	renderer.compute( initCompute );
+};
 
-			// spinning
-			const spinningForce = attractorRotationAxis.mul( gravityStrength ).mul( spinningStrength );
-			const spinningVelocity = spinningForce.cross( toAttractor );
-			force.addAssign( spinningVelocity );
+reset();
 
-		} );
+// update compute
 
-		// velocity
+const particleMassMultiplier = hash( instanceIndex.add( uint( Math.random() * 0xffffff ) ) ).remap( 0.25, 1 ).toVar();
+const particleMass = particleMassMultiplier.mul( particleGlobalMass ).toVar();
 
-		velocity.addAssign( force.mul( delta ) );
-		const speed = velocity.length();
-		If( speed.greaterThan( maxSpeed ), () => {
+const update = Fn( () => {
+	// const delta = timerDelta().mul( timeScale ).min( 1 / 30 ).toVar();
+	const delta = float( 1 / 60 ).mul( timeScale ).toVar(); // uses fixed delta to consistant result
+	const position = positionBuffer.element( instanceIndex );
+	const velocity = velocityBuffer.element( instanceIndex );
 
-			velocity.assign( velocity.normalize().mul( maxSpeed ) );
+	// force
 
-		} );
-		velocity.mulAssign( velocityDamping.oneMinus() );
+	const force = vec3( 0 ).toVar();
 
-		// position
+	/*Loop( attractorsLength, ( { i } ) => {
+		const attractorPosition = attractorsPositions.element( i );
+		const attractorRotationAxis = attractorsRotationAxes.element( i );
+		const toAttractor = attractorPosition.sub( position );
+		const distance = toAttractor.length();
+		const direction = toAttractor.normalize();
+		// gravity
+		const gravityStrength = attractorMass.mul( particleMass ).mul( gravityConstant ).div( distance.pow( 2 ) ).toVar();
+		const gravityForce = direction.mul( gravityStrength );
+		force.addAssign( gravityForce );
+		// spinning
+		const spinningForce = attractorRotationAxis.mul( gravityStrength ).mul( spinningStrength );
+		const spinningVelocity = spinningForce.cross( toAttractor );
+		force.addAssign( spinningVelocity );
+	} );*/
 
-		position.addAssign( velocity.mul( delta ) );
-
-		// box loop
-
-		const halfHalfExtent = boundHalfExtent.div( 2 ).toVar();
-		position.assign( mod( position.add( halfHalfExtent ), boundHalfExtent ).sub( halfHalfExtent ) );
-
+	// velocity
+	velocity.addAssign( force.mul( delta ) );
+	const speed = velocity.length();
+	If( speed.greaterThan( maxSpeed ), () => {
+		// velocity.assign( velocity.normalize().mul( maxSpeed ) );
+		velocity.assign(0);
 	} );
-	updateCompute = update().compute( count );
+	velocity.assign(0)
+	// velocity.addAssign(position.yxz)
+	velocity.addAssign(vecField(position.x, position.y, position.z))
+	// velocity.addAssign(sphericalToVec3(position.x, 0))
+	// position
 
-	// nodes
+	position.addAssign( velocity.mul( delta ) );
+	
+	// box loop
+	const halfHalfExtent = boundHalfExtent.div( 2 ).toVar();
+	position.assign( mod( position.add( halfHalfExtent ), boundHalfExtent ).sub( halfHalfExtent ) );
 
-	material.positionNode = positionBuffer.toAttribute();
+} );
+updateCompute = update().compute( count );
 
-	material.colorNode = Fn( () => {
+// nodes
 
-		const velocity = velocityBuffer.toAttribute();
-		const speed = velocity.length();
-		const colorMix = speed.div( maxSpeed ).smoothstep( 0, 0.5 );
-		const finalColor = mix( colorA, colorB, colorMix );
+material.positionNode = positionBuffer.toAttribute();
 
-		return vec4( finalColor, 1 );
+material.colorNode = Fn( () => {
 
-	} )();
+	const velocity = velocityBuffer.toAttribute();
+	const speed = velocity.length();
+	const colorMix = speed.div( maxSpeed ).smoothstep( 0, 0.5 );
+	const finalColor = mix( colorA, colorB, colorMix );
 
-	material.scaleNode = particleMassMultiplier.mul( scale );
+	return vec4( finalColor, 1 );
 
-	// mesh
+} )();
 
-	const geometry = new THREE.PlaneGeometry( 1, 1 );
-	const mesh = new THREE.InstancedMesh( geometry, material, count );
-	scene.add( mesh );
+material.scaleNode = particleMassMultiplier.mul( scale );
 
-	// debug
+// mesh
+const geometry = new THREE.PlaneGeometry( 1, 1 );
+const mesh = new THREE.InstancedMesh( geometry, material, count );
+scene.add( mesh );
 
+// gui
+if (true) {
 	const gui = new GUI();
-
 	gui.add( { attractorMassExponent: attractorMass.value.toString().length - 1 }, 'attractorMassExponent', 1, 10, 1 ).onChange( value => attractorMass.value = Number( `1e${value}` ) );
 	gui.add( { particleGlobalMassExponent: particleGlobalMass.value.toString().length - 1 }, 'particleGlobalMassExponent', 1, 10, 1 ).onChange( value => particleGlobalMass.value = Number( `1e${value}` ) );
 	gui.add( maxSpeed, 'value', 0, 10, 0.01 ).name( 'maxSpeed' );
-	gui.add( velocityDamping, 'value', 0, 0.1, 0.001 ).name( 'velocityDamping' );
 	gui.add( spinningStrength, 'value', 0, 10, 0.01 ).name( 'spinningStrength' );
 	gui.add( scale, 'value', 0, 0.1, 0.001 ).name( 'scale' );
-	gui.add( boundHalfExtent, 'value', 0, 20, 0.01 ).name( 'boundHalfExtent' );
 	gui.addColor( { color: colorA.value.getHexString( THREE.SRGBColorSpace ) }, 'color' ).name( 'colorA' ).onChange( value => colorA.value.set( value ) );
 	gui.addColor( { color: colorB.value.getHexString( THREE.SRGBColorSpace ) }, 'color' ).name( 'colorB' ).onChange( value => colorB.value.set( value ) );
-	gui
-		.add( { controlsMode: attractors[ 0 ].controls.mode }, 'controlsMode' )
-		.options( [ 'translate', 'rotate', 'none' ] )
-		.onChange( value => {
-
-			for ( const attractor of attractors ) {
-
-				if ( value === 'none' ) {
-
-					attractor.controls.visible = false;
-					attractor.controls.enabled = false;
-
-				} else {
-
-					attractor.controls.visible = true;
-					attractor.controls.enabled = true;
-					attractor.controls.mode = value;
-
-				}
-
-			}
-
-		} );
-
-	gui
-		.add( { helperVisible: attractors[ 0 ].helper.visible }, 'helperVisible' )
-		.onChange( value => {
-
-			for ( const attractor of attractors )
-				attractor.helper.visible = value;
-
-		} );
-
 	gui.add( { reset }, 'reset' );
+}
 
+// end of init(); function
 }
 
 function onWindowResize() {
-
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
-
 	renderer.setSize( window.innerWidth, window.innerHeight );
-
 }
 
 async function animate() {
-
 	controls.update();
-
 	renderer.compute( updateCompute );
 	renderer.render( scene, camera );
-
 }
 
 
