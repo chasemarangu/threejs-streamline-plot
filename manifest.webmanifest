@@ -1,0 +1,15 @@
+{
+  "short_name": "3js Streamline",
+  "name": "Three.js Streamline Plot",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "572x572",
+      "type": "image/jpeg"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
