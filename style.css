@@ -1,40 +1,25 @@
-/*
-A note about my CSS conventions
-I use :where() on everything to reset the specificity so I can set the order in terms of order in the code and with CSS layers.
+/* Note about my CSS conventions
+- I use CSS layers alot to separate my CSS reset
+from the rest of my CSS, etc.
+- I use :where() on all selectors so I don't have
+- - to worry about CSS sepecificity chaning the order
 */
-
 @layer css-reset {
-	:where( body, body * ) {
-		/* prevent horizontal
-		scrollbars with
-		width: 100%; */
+	:where( body * ) {
 		box-sizing: border-box;
+	}
+	:where( p ) {
+		all: unset;
+		display: block;
 	}
 }
 
 @layer optional-stuff {
-	:where(canvas, body *) {
-		border: 1px solid black;
+	:where( body ) {
+/* 		background-image: linear-gradient(skyblue, white); */
+		background-size: cover;
 	}
-
-	:where(canvas) { }
-
-	:where(#canvas-wrapper) {
-		/* changing canvas.style.width/height (CSS pixels)
-		squashes the aspect ratio, but changing the
-		canvas.setAttribute('width', ...)
-		and height HTML attributes (HTML canvas pixels)
-		preserves it.
-		I use ResizeObserver() on the #canvas-wrapper
-		element with the Three.js renderer.setSize(...)
-		function to set both the CSS width/height
-		and the HTML Canvas width/height. */
-		
-		/* the width and height get overwritten by
-		the resize, if the user drags the widget */
-		width: 500px;
-		height: 300px;
-		overflow: scroll;
-		resize: both;
+	:where( header ) {
+		background-color: rgba(255,255,255.0.5);
 	}
 }
