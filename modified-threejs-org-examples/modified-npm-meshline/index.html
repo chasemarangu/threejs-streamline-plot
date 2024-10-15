@@ -1,0 +1,51 @@
+<!Doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		
+		<title>Three.js Streamline Plot</title>
+		<!-- <link rel="icon" type="image/png" href=././favicon.png> -->
+		<!-- <link rel="icon" type="image/vnd.microsoft.icon" href=././logo.ico> -->
+		<!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+		
+		<!-- <link rel="stylesheet" href=././style.css> -->
+	</head>
+	<body>
+
+
+Starter Code credit to <a href="https://threejs.org/examples/?q=particles#webgl_buffergeometry_custom_attributes_particles" target="_blank">https://threejs.org/examples/?q=particles#webgl_buffergeometry_custom_attributes_particles</a> and <a href=https://www.jsdelivr.com/package/npm/meshline target=_blank>https://www.jsdelivr.com/package/npm/meshline</a>
+
+<button id=play-button>play</play>
+<button id=pause-button>pause</play>
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/../build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/./jsm/",
+		"meshline":"https://cdn.jsdelivr.net/npm/meshline@3.3.1/+esm"
+	}
+}
+</script>
+
+<script type="x-shader/x-vertex" id="vertexshader">
+attribute float size;
+varying vec3 vColor;
+void main() {
+	vColor = color;
+	vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+	gl_PointSize = size * ( 300.0 / -mvPosition.z );
+	gl_Position = projectionMatrix * mvPosition;
+}
+</script>
+
+<script type="x-shader/x-fragment" id="fragmentshader">
+uniform sampler2D pointTexture;
+varying vec3 vColor;
+void main() {
+	gl_FragColor = vec4( vColor, 1.0 );
+	gl_FragColor = gl_FragColor * texture2D( pointTexture, gl_PointCoord );
+}
+</script>
+<script type=module src=././script.js></script>
+	</body>
+</html>
