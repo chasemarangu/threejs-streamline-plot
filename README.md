@@ -5,4 +5,4 @@ WIP project for a streamline plotter that runs entirely in the browser and will 
 TODO
 - [x] deploy to GitHub Pages
 - [ ] add streamlines to the particle system
-- [ ] fix WebXR compatibility
+- [x] fix WebXR compatibility
