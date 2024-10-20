@@ -12,6 +12,11 @@ let renderer, scene, camera, controls;
 
 let chargedParticles = [];
 
+// The width of the cube that all the scene fits in.
+// Twice the max distance from the origin along any axis
+// const sceneW = 5 * 2;
+const sceneW = 10 * 2;
+
 init();
 
 function init () {
@@ -44,8 +49,38 @@ function init () {
 		lights[ 1 ].position.set( 100, 200, 100 );
 		lights[ 2 ].position.set( - 100, - 200, - 100 );
 	scene.add( lights[ 0 ] ); scene.add( lights[ 1 ] ); scene.add( lights[ 2 ] );
-	scene.add( new THREE.GridHelper(10, 10) )
+	// ground
+	scene.add( new THREE.GridHelper(sceneW, sceneW) )
+	scene.add( new THREE.BoxHelper(new THREE.Mesh(
+			new THREE.BoxGeometry(sceneW, sceneW, sceneW)
+		))
+	)
 	//
+	//
+	// add some charged particles
+	for (let i=0; i<10; ++i) {
+		chargedParticles.push({
+			charge: Math.round(Math.random(1, 5))*(
+				Math.round(Math.random(0,1))*2-1
+			), // Charge in Coulombs. Can't be zero, but can be ±(1...5)
+			// radius can be 1 or 2
+			// radius: Math.round( Math.random()*(2-1) +1 ),
+			// just set radius to 1
+			radius: 1,
+			x: (Math.random()*1-.5)*sceneW,
+			y: (Math.random()*1-.5)*sceneW,
+			z: (Math.random()*1-.5)*sceneW
+		})
+	}
+	//
+	for (let p of chargedParticles) {
+		let geometry = new THREE.SphereGeometry( p.radius, 10, 10 );
+		let material = new THREE.MeshPhongMaterial( { color: p.charge < 0 ? 0x156289 : 0xCCCC00, emissive: 0x072534, side: THREE.DoubleSide, flatShading: true })
+		p.mesh = new THREE.Mesh(geometry, material);
+		// position.set help from https://discourse.threejs.org/t/discourage-usage-of-translatex-y-z-and-rotatex-y-z-methods/50796
+		p.mesh.position.set(p.x, p.y, p.z)
+		scene.add( p.mesh );
+	}
 	//
 	//
 	renderer = new THREE.WebGLRenderer();
@@ -61,7 +96,7 @@ function init () {
 	controls = new OrbitControls( camera, renderer.domElement );
 	controls.enableDamping = true;
 	controls.minDistance = 10;
-	controls.maxDistance = 50;
+	controls.maxDistance = sceneW*4;
 	controls.target.set(0, 0, 0); // for VR?
 	controls.update()
 	//

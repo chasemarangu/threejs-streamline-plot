@@ -14,12 +14,26 @@ from the rest of my CSS, etc.
 	}
 }
 
+@layer css-vars {
+	:where( :root ) {
+		--bg: black;
+	}
+}
+
 @layer optional-stuff {
 	:where( body ) {
 /* 		background-image: linear-gradient(skyblue, white); */
 		background-size: cover;
+/* 		overflow: hidden; */
 	}
 	:where( header ) {
 		background-color: rgba(255,255,255.0.5);
+	}
+	:where( #canvas-wrapper ) {
+/* 		background-color: var(--bg); */
+/* 		position:absolute;top:0em;right:0;bottom:0;left:0; */
+		position:absolute;top:0;left:0;width:100%;height:100%;
+		margin:0;padding:0;border:0;
+		overflow: hidden;
 	}
 }
