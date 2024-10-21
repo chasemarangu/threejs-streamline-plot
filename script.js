@@ -10,12 +10,16 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 const canvasWrapperEl = document.querySelector('#canvas-wrapper');
 let renderer, scene, camera, controls;
 
-let chargedParticles = [];
+let chargedParticles = []; const initChargedParticlesLen = 10;
+let fieldLines = []; const numFieldLines = 20;
+// for function vecField below
+let vecFieldReturnValue = new THREE.Vector3();
 
 // The width of the cube that all the scene fits in.
 // Twice the max distance from the origin along any axis
 // const sceneW = 5 * 2;
-const sceneW = 10 * 2;
+// const sceneW = 10 * 2;
+const sceneW = 40 * 2;
 
 init();
 
@@ -80,6 +84,7 @@ function init () {
 		// position.set help from https://discourse.threejs.org/t/discourage-usage-of-translatex-y-z-and-rotatex-y-z-methods/50796
 		p.mesh.position.set(p.x, p.y, p.z)
 		scene.add( p.mesh );
+		//
 	}
 	//
 	//
@@ -91,6 +96,44 @@ function init () {
 	// renderer.xr.setFramebufferScaleFactor(2.0); // increase resoluition - MUSTDO
 	document.body.appendChild( VRButton.createButton( renderer ) );
 	// renderer.xr.setReferenceSpaceType('local');
+	//
+	//
+	// TransformControls code help from
+	// https://github.com/mrdoob/three.js/blob/master/examples/webgpu_tsl_compute_attractors_particles.html
+	for (let p of chargedParticles) {
+		// add the controls to it
+		p.tcontrols = new TransformControls( camera, renderer.domElement );
+		// p.tcontrols.mode = 'translate'; // translate, rotate, scale
+		p.tcontrols.size = 0.5;
+		p.tcontrols.attach( p.mesh );
+		p.tcontrols.enabled = true;
+		console.log(p.tcontrols)
+		scene.add( p.tcontrols );
+		p.tcontrols.addEventListener( 'dragging-changed', ( event ) => {
+			controls.enabled = ! event.value;
+		});
+		p.tcontrols.addEventListener( 'change', () => {
+			// attractor.position.copy( attractor.reference.position );
+			// attractor.orientation.copy( new THREE.Vector3( 0, 1, 0 ).applyQuaternion( attractor.reference.quaternion ) );
+		});
+		// MUSTDO - make it so that only one TransformCtrl can be
+		//          selected and dragged at a time
+		// MUSTDO - clamp object positions to sceneW so you can't accidentally
+		//          TransformCtrl your object past the vanishing point to infinity
+	}
+	//
+	/*for (let i=0; i<numFieldLines; ++i) {
+		let l = {
+			x: (Math.random()*.5 - 1)*sceneW,
+			y: (Math.random()*.5 - 1)*sceneW,
+			z: (Math.random()*.5 - 1)*sceneW
+		}
+		// MUSTDO - use batched mesh
+		l.geom = new THREE.TubeGeometry()
+		fieldLines.push(l)
+	}*/
+	//
+	// for (let l of fieldLines) {}
 	//
 	//
 	controls = new OrbitControls( camera, renderer.domElement );
@@ -109,6 +152,14 @@ function init () {
 function vecField (x, y, z) {
 	// sum up charged spheeres k*q/r
 	// varying radius and charge
+	//
+	// we use vecFieldReturnValue variable
+	// so we do not create a memory leak of
+	// new THREE.Vector3() a million times per second
+	vecFieldReturnValue.set(
+		1, 1, 1
+	)
+	return vecFieldReturnValue;
 }
 
 // renderer.setAnimationLoop( animate );
